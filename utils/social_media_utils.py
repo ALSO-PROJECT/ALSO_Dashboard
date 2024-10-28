@@ -348,7 +348,7 @@ class SocialMedia():
             sentiment_text = ':neutral_face:'
         
         st.markdown(f"""
-        👤 **{author_name}** {indent}❤️ {int(comment['comment_likes'])} {indent} {':speech_balloon:'} **sentiment_german:** {sentiment_text} **sentiment_sentiws:** {float(self.eval_safe(comment['sentiws_sentiment_comments']))}
+        👤 **{author_name}** {indent}❤️ {int(comment['comment_likes'])} {indent} {':speech_balloon:'} **sentiment_german:** {sentiment_text} **sentiment_sentiws:** {float(comment['sentiws_sentiment_comments'])}
         """)
         st.markdown(f"{indent}{comment['comment_text']}")
 
@@ -376,7 +376,7 @@ class SocialMedia():
 
             st.markdown(f"{indent}***Reply***")
             st.markdown(f"""
-                {indent} 👤 **{author_name}** {indent}❤️ {int(reply['comment_likes'])} {indent} {':speech_balloon:'} **sentiment_german:** {sentiment_text} **sentiment_sentiws:** {float(self.eval_safe(reply['sentiws_sentiment_comments']))}
+                {indent} 👤 **{author_name}** {indent}❤️ {int(reply['comment_likes'])} {indent} {':speech_balloon:'} **sentiment_german:** {sentiment_text} **sentiment_sentiws:** {float(reply['sentiws_sentiment_comments'])}
                 """)
             st.markdown(f"{indent}{indent}{reply['comment_text']}")
             # self.display_comment(reply, level)
