@@ -42,8 +42,20 @@ class SocialMedia():
         date_extracted = dataframe['extracted_date'][row_idx].date()
         video_id = dataframe['video_id'][row_idx]
 
-        main_container = st.container(height=1000)
+        st.markdown(
+                    """
+                    <style>
+                    .reconstructed-page-container {
+                        height: 1000px;
+                    }
+                    </style>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+        main_container = st.container()
         with main_container:
+            st.markdown('<div class="reconstructed-page-container">', unsafe_allow_html=True)
             media_col,desc_col = st.columns(2,gap='medium')
             with media_col:
                 st.video(video_url,
@@ -66,8 +78,20 @@ class SocialMedia():
                 
             with desc_col:
                 st.markdown(f"### {title}")
-                with st.container(height=300):
+                st.markdown(
+                    """
+                    <style>
+                    .video-description-container {
+                        height: 300px;
+                    }
+                    </style>
+                    """,
+                    unsafe_allow_html=True
+                )
+                with st.container():
+                    st.markdown('<div class="video-description-container">', unsafe_allow_html=True)
                     st.write(f"#### Video Description \n {description}")
+                    st.markdown('</div>', unsafe_allow_html=True)
                 col1,col2 = st.columns(2)
                 col1.markdown(f"\n **Date Uploaded:** {date_uploaded}")
                 col2.markdown(f"\n **Date Extracted:** {date_extracted}")
@@ -101,7 +125,18 @@ class SocialMedia():
                 # 2 Tabs for comments and transcripts
                 comments_tab,transcripts_tab = st.tabs(["Comments", "Transcripts"],)
                 with comments_tab:
-                    with st.container(height=700):
+                    st.markdown(
+                                """
+                                <style>
+                                .comments-container {
+                                    height: 700px;
+                                }
+                                </style>
+                                """,
+                                unsafe_allow_html=True
+                            )
+                    with st.container():
+                        st.markdown('<div class="comments-container">', unsafe_allow_html=True)
                         if comments_count ==0:
                             st.write("No Comments")
                         else:
@@ -113,16 +148,43 @@ class SocialMedia():
                                 anonymous_dict = {}
                                 self.display_comments(video_id,dataframe,anonymous_dict,platform)
                             # self.display_comments(video_id,comments_df)
+                        st.markdown('</div>', unsafe_allow_html=True)
                 
                 with transcripts_tab:
-                    with st.container(height=700):
+                    st.markdown(
+                                """
+                                <style>
+                                .transcripts-container {
+                                    height: 700px;
+                                }
+                                </style>
+                                """,
+                                unsafe_allow_html=True
+                            )
+                    with st.container():
+                        st.markdown('<div class="transcripts-container">', unsafe_allow_html=True)
                         if transcripts is 'No Transcript':
                             st.write_stream(self.stream_data(transcripts + "Need to Implement/Transcribe automatically"))
                         else:
                             st.write(transcripts)
+                        st.markdown('</div>', unsafe_allow_html=True)
 
-        second_container = st.container(height=700)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        st.markdown(
+                    """
+                    <style>
+                    .second-container {
+                        height: 700px;
+                    }
+                    </style>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+        second_container = st.container()
         with second_container:
+            st.markdown('<div class="second-container">', unsafe_allow_html=True)
             col_1,col_2 = st.columns(2)
             with col_1:
                 st.subheader("Unique users in comments",divider='blue')
@@ -130,7 +192,9 @@ class SocialMedia():
 
 
             with col_2:
-                st.container(height=600)
+                st.container()
+
+            st.markdown('</div>', unsafe_allow_html=True)
         
         return None
 
@@ -171,7 +235,18 @@ class SocialMedia():
 
 
     def unique_users_comments_pie_chart(self,unique_users):
-        with st.container(height=600):
+        st.markdown(
+                    """
+                    <style>
+                    .unique-container {
+                        height: 600px;
+                    }
+                    </style>
+                    """,
+                    unsafe_allow_html=True
+                )
+        with st.container():
+                    st.markdown('<div class="unique-container">', unsafe_allow_html=True)
                     unique_df = unique_users.reset_index()
                     unique_df.columns = ['Author', 'Comment Count']
                     unique_df['percentage'] = (unique_df['Comment Count'] / unique_df['Comment Count'].sum() * 100).round(1)
@@ -203,6 +278,7 @@ class SocialMedia():
                     )
 
                     st.plotly_chart(fig)
+                    st.markdown('</div>', unsafe_allow_html=True)
 
 
     def plot_single_post(self,video_id,dataframe,container):
