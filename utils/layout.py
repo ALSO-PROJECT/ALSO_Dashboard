@@ -56,19 +56,19 @@ class SocialMediaLayout():
         
         filtered_df = self.create_filters()
         
-        st.markdown(
-                    """
-                    <style>
-                    .layout-page-container {
-                        height: 600px;
-                    }
-                    </style>
-                    """,
-                    unsafe_allow_html=True
-                )
+        # st.markdown(
+        #             """
+        #             <style>
+        #             .layout-page-container {
+        #                 height: 600px;
+        #             }
+        #             </style>
+        #             """,
+        #             unsafe_allow_html=True
+        #         )
         # Hide this until you get the data.   
-        with st.container():
-            st.markdown('<div class="layout-page-container">', unsafe_allow_html=True)
+        with st.container(height=600):
+            # st.markdown('<div class="layout-page-container">', unsafe_allow_html=True)
             cl_1,cl_2,cl_3 = st.columns(3)
             cl_1.success('Displaying data for the selected filters')
             cl_3.download_button(
@@ -84,7 +84,7 @@ class SocialMediaLayout():
                                         height=500,
                                         )
             print("\nReceived Data : ",received_data)
-            st.markdown('</div>', unsafe_allow_html=True)
+            # st.markdown('</div>', unsafe_allow_html=True)
             
         if received_data["selection"]["rows"]:
             row_idx = received_data['selection']['rows'][0]
