@@ -93,7 +93,7 @@ class SocialMediaLayout():
             uploaded_file = st.file_uploader("Upload a JSON file to load presets",
                                              type="json",accept_multiple_files=False,
                                              help="Upload the presets file",label_visibility="collapsed")
-            st.link_button("Load_presets",'uploaded_file')
+            #st.link_button("Load_presets",'uploaded_file')
             if uploaded_file is not None:
                 st.success("loaded presets sucessfully")
     
