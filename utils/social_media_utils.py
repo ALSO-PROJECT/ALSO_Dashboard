@@ -209,23 +209,23 @@ class SocialMedia():
             st.write("No comments available for this video.")
             return
         
-        if 'sentiment_textblob' not in comments.columns:
-            st.error("Column 'sentiment_textblob' does not exist in the DataFrame.")
+        if 'sentiws_sentiment_comments' not in comments.columns:
+            st.error("Column 'sentiws_sentiment_comments' does not exist in the DataFrame.")
             return
         
-        if comments['sentiment_textblob'].dtype == 'object':
+        if comments['sentiws_sentiment_comments'].dtype == 'object':
             try:
-                comments['sentiment_score'] = comments['sentiment_textblob'].astype(float)
+                comments['sentiment_score'] = comments['sentiws_sentiment_comments'].astype(float)
             except ValueError:
-                st.error("Column 'sentiment_textblob' contains non-numeric values that cannot be converted to float.")
+                st.error("Column 'sentiws_sentiment_comments' contains non-numeric values that cannot be converted to float.")
                 return
         else:
-            comments['sentiment_score'] = comments['sentiment_textblob']
+            comments['sentiment_score'] = comments['sentiws_sentiment_comments']
 
         most_positive_comment = comments.loc[comments['sentiment_score'].idxmax()]
         most_negative_comment = comments.loc[comments['sentiment_score'].idxmin()]
         
-        comments['sentiment_score'] = comments['sentiment_textblob']
+        comments['sentiment_score'] = comments['sentiws_sentiment_comments']
 
         most_positive_comment = comments.loc[comments['sentiment_score'].idxmax()]
         most_negative_comment = comments.loc[comments['sentiment_score'].idxmin()]
@@ -339,7 +339,7 @@ class SocialMedia():
             author_name = comment['author_name']
             author_name = anonymous_dict[author_name]
         
-        sentiment_score = self.eval_safe(comment['sentiment_german'])
+        sentiment_score = self.eval_safe(comment['german_sentiment_comments'])
         if sentiment_score[0][0] == 'positive':
             sentiment_text = ':smiley:'
         elif sentiment_score[0][0] == 'negative':
@@ -348,7 +348,7 @@ class SocialMedia():
             sentiment_text = ':neutral_face:'
         
         st.markdown(f"""
-        👤 **{author_name}** {indent}❤️ {int(comment['comment_likes'])} {indent} {':speech_balloon:'} **sentiment_score:** {sentiment_text}
+        👤 **{author_name}** {indent}❤️ {int(comment['comment_likes'])} {indent} {':speech_balloon:'} **sentiment_german:** {sentiment_text} **sentiment_sentiws:** {float(self.eval_safe(comment['sentiws_sentiment_comments']))}
         """)
         st.markdown(f"{indent}{comment['comment_text']}")
 
@@ -359,7 +359,7 @@ class SocialMedia():
 
         for _, reply in replies.iterrows():
 
-            sentiment_score = self.eval_safe(reply['sentiment_german'])
+            sentiment_score = self.eval_safe(reply['german_sentiment_comments'])
             if sentiment_score[0][0] == 'positive':
                 sentiment_text = ':smiley:'
             elif sentiment_score[0][0] == 'negative':
@@ -376,7 +376,7 @@ class SocialMedia():
 
             st.markdown(f"{indent}***Reply***")
             st.markdown(f"""
-                {indent} 👤 **{author_name}** {indent}❤️ {int(reply['comment_likes'])} {indent} {':speech_balloon:'} **sentiment_score:** {sentiment_text}
+                {indent} 👤 **{author_name}** {indent}❤️ {int(reply['comment_likes'])} {indent} {':speech_balloon:'} **sentiment_german:** {sentiment_text} **sentiment_sentiws:** {float(self.eval_safe(reply['sentiws_sentiment_comments']))}
                 """)
             st.markdown(f"{indent}{indent}{reply['comment_text']}")
             # self.display_comment(reply, level)
