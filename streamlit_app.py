@@ -21,7 +21,7 @@ class ALSO_DASHBOARD:
         
     def run():
         ############### KORPUS DATABASE ##################
-        DATABASE_DIR = 'database/'
+        DATABASE_DIR = 'database'
 
         korpus_dict= {'Altersarmut_korpus':DATABASE_DIR+'/Altersarmut_korpus.csv',
                     'Altersvorsorge_korpus':DATABASE_DIR+'/Altersvorsorge_korpus.csv',

@@ -17,10 +17,6 @@ import plotly.graph_objects as go
 import streamlit as st
 
 import locale
-try:
-    locale.setlocale(locale.LC_TIME, "de_DE.utf8")
-except locale.Error:
-    locale.setlocale(locale.LC_TIME, "en_US.utf8")
 
 # Custom imports
 from utils.social_media_utils import SocialMedia
