@@ -53,7 +53,7 @@ class SocialMedia():
         #             unsafe_allow_html=True
         #         )
 
-        main_container = st.container(1000)
+        main_container = st.container(height=1000)
         with main_container:
             # st.markdown('<div class="reconstructed-page-container">', unsafe_allow_html=True)
             media_col,desc_col = st.columns(2,gap='medium')
@@ -88,7 +88,7 @@ class SocialMedia():
                 #     """,
                 #     unsafe_allow_html=True
                 # )
-                with st.container(300):
+                with st.container(height=300):
                     # st.markdown('<div class="video-description-container">', unsafe_allow_html=True)
                     st.write(f"#### Video Description \n {description}")
                     # st.markdown('</div>', unsafe_allow_html=True)
@@ -135,7 +135,7 @@ class SocialMedia():
                     #             """,
                     #             unsafe_allow_html=True
                     #         )
-                    with st.container(700):
+                    with st.container(height=700):
                         # st.markdown('<div class="comments-container">', unsafe_allow_html=True)
                         if comments_count ==0:
                             st.write("No Comments")
@@ -161,7 +161,7 @@ class SocialMedia():
                     #             """,
                     #             unsafe_allow_html=True
                     #         )
-                    with st.container(700):
+                    with st.container(height=700):
                         # st.markdown('<div class="transcripts-container">', unsafe_allow_html=True)
                         if transcripts is 'No Transcript':
                             st.write_stream(self.stream_data(transcripts + "Need to Implement/Transcribe automatically"))
@@ -182,7 +182,7 @@ class SocialMedia():
         #             unsafe_allow_html=True
         #         )
 
-        second_container = st.container(700)
+        second_container = st.container(height=700)
         with second_container:
             # st.markdown('<div class="second-container">', unsafe_allow_html=True)
             col_1,col_2 = st.columns(2)
@@ -235,18 +235,18 @@ class SocialMedia():
 
 
     def unique_users_comments_pie_chart(self,unique_users):
-        st.markdown(
-                    """
-                    <style>
-                    .unique-container {
-                        height: 600px;
-                    }
-                    </style>
-                    """,
-                    unsafe_allow_html=True
-                )
-        with st.container():
-                    st.markdown('<div class="unique-container">', unsafe_allow_html=True)
+        # st.markdown(
+        #             """
+        #             <style>
+        #             .unique-container {
+        #                 height: 600px;
+        #             }
+        #             </style>
+        #             """,
+        #             unsafe_allow_html=True
+        #         )
+        with st.container(height=600):
+                    # st.markdown('<div class="unique-container">', unsafe_allow_html=True)
                     unique_df = unique_users.reset_index()
                     unique_df.columns = ['Author', 'Comment Count']
                     unique_df['percentage'] = (unique_df['Comment Count'] / unique_df['Comment Count'].sum() * 100).round(1)
@@ -278,7 +278,7 @@ class SocialMedia():
                     )
 
                     st.plotly_chart(fig)
-                    st.markdown('</div>', unsafe_allow_html=True)
+                    # st.markdown('</div>', unsafe_allow_html=True)
 
 
     def plot_single_post(self,video_id,dataframe,container):
