@@ -162,12 +162,15 @@ class SocialMedia():
                     #             unsafe_allow_html=True
                     #         )
                     with st.container(height=700):
+                        indent = '&ensp;&thinsp;&ensp;&thinsp;'
+                        st.markdown(f" :green-background[**German_Sentiment_Score:**]{indent} {':speech_balloon:'} {dataframe["german_sentiment_transcript"][row_idx]}")
+                        st.markdown(f" :green-background[**Sentiws_Sentiment_Score:**]{indent} {':speech_balloon:'} {dataframe["sentiws_sentiment_transcript"][row_idx]}")
                         # st.markdown('<div class="transcripts-container">', unsafe_allow_html=True)
                         if transcripts is 'No Transcript':
                             st.write_stream(self.stream_data(transcripts + "Need to Implement/Transcribe automatically"))
                         else:
                             st.write(transcripts)
-                        st.markdown('</div>', unsafe_allow_html=True)
+                        # st.markdown('</div>', unsafe_allow_html=True)
 
             # st.markdown('</div>', unsafe_allow_html=True)
 
