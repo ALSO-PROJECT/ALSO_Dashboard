@@ -15,6 +15,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 import streamlit as st
+import ast
 
 import locale
 
@@ -77,7 +78,7 @@ class SocialMediaLayout():
                     file_name=f"Social_media_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
                     mime="csv",
                 )
-            received_data = st.dataframe(filtered_df,
+            received_data = st.dataframe(self.display_dataframe(filtered_df),
                                         use_container_width=True,
                                         on_select='rerun',
                                         selection_mode=['single-row'],
@@ -265,12 +266,34 @@ class SocialMediaLayout():
                     ]
 
         with third_col:
+            # Extract primary sentiment into a new column
+            filtered_df['primary_sentiment'] = filtered_df['german_sentiment_transcript'].apply(self.extract_primary_sentiment)
+
             third_col.write("Select Sentiment")
             positive_senti_col,neutral_senti_col,negative_senti_col = st.columns(3)
             positive_filter = positive_senti_col.checkbox('Positive Sentiment')
             neutral_filter = neutral_senti_col.checkbox('Neutral Sentiment')
             negative_filter = negative_senti_col.checkbox('Negative Sentiment')
-        
+            
+            # Now, proceed with the sentiment filtering
+            sentiment_filters = []
+            if positive_filter:
+                sentiment_filters.append('positive')
+            if neutral_filter:
+                sentiment_filters.append('neutral')
+            if negative_filter:
+                sentiment_filters.append('negative')
+
+            # Apply the sentiment filter based on the 'primary_sentiment' column
+            if sentiment_filters:
+                posts_with_selected_sentiments = filtered_df[filtered_df['primary_sentiment'].isin(sentiment_filters)]
+                selected_video_ids = posts_with_selected_sentiments['video_id'].unique()
+                filtered_df = filtered_df[filtered_df['video_id'].isin(selected_video_ids)]
+                
+                # filtered_df = filtered_df[filtered_df['primary_sentiment'].isin(sentiment_filters)]
+
+
+
         # Display DataFrame based on Video ID
         with first_col:
             # Input for video_id
@@ -284,10 +307,23 @@ class SocialMediaLayout():
 
         return filtered_df
 
+    def extract_primary_sentiment(self,sentiment_data):
+        try:
+            parsed_data = ast.literal_eval(sentiment_data)
+            if isinstance(parsed_data, tuple):
+                primary_sentiment = parsed_data[0][0]
+                return primary_sentiment.lower()
+        except (ValueError, SyntaxError, IndexError, TypeError):
+            return None
 
     def display_dataframe(self,dataframe):
-        columns_to_display = ['video_id','platform','channel_name','title','video_description','video_duration','views_count','comments_count','like_count','subscribers_count','upload_date','extracted_date','transcript_german','video_category']
-        return dataframe[columns_to_display]
+        columns_to_display = ['video_id','hashtag','platform','channel_name','title',
+                              'views_count','comments_count','like_count',
+                              'subscribers_count','upload_date','extracted_date',
+                              'video_category','media_type','time_stamp',
+                              'is_private','transcript_source'
+                              ]
+        return dataframe[pd.notna(dataframe['title'])][columns_to_display]
 
 
     def set_dataframe_format(self,dataframe,corpus_select):

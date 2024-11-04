@@ -12,6 +12,7 @@ import plotly.graph_objects as go
 
 import streamlit as st
 import io
+import ast
 
 class SocialMedia():
 
@@ -66,15 +67,11 @@ class SocialMedia():
                     )
                 
                 st.markdown(f"**Post Url :** {dataframe['original_url'][row_idx]}")
-                colu1,colu2 = st.columns(2)
-                with colu1.container(height=600):
-                    st.subheader("Most Positive/Negative Comments",divider='blue')
+                
+                with st.container(height=600):
+                    st.subheader("Most Positive/Negative Comment Based on SentiWS",divider='blue')
                     self.most_sentiment_comments(dataframe,video_id)
-                with colu2.container(height=600):
-                    st.subheader("Unique Users in Comments",divider='blue')
-                    unique_users = self.count_comments_per_author(comments_df=dataframe,
-                                                   video_id=video_id,
-                                                   )
+                
                 
             with desc_col:
                 st.markdown(f"### {title}")
@@ -159,12 +156,11 @@ class SocialMedia():
                     #             }
                     #             </style>
                     #             """,
-                    #             unsafe_allow_html=True
+                    #             unsafe_allow_html=True ast.literal_eval(sentiment_data)
                     #         )
                     with st.container(height=700):
                         indent = '&ensp;&thinsp;&ensp;&thinsp;'
-                        st.markdown(f" :green-background[**German_Sentiment_Score:**]{indent} {':speech_balloon:'} {dataframe["german_sentiment_transcript"][row_idx]}")
-                        st.markdown(f" :green-background[**Sentiws_Sentiment_Score:**]{indent} {':speech_balloon:'} {dataframe["sentiws_sentiment_transcript"][row_idx]}")
+                        st.markdown(f'{dataframe["transcript_source"][row_idx]} {indent} {":speech_balloon:"} :green-background[**German_Sentiment_Score:**] {ast.literal_eval(dataframe["german_sentiment_transcript"][row_idx])[0][0]} {indent} {":speech_balloon:"} :green-background[**Sentiws_Sentiment_Score:**] {dataframe["sentiws_sentiment_transcript"][row_idx]}')
                         # st.markdown('<div class="transcripts-container">', unsafe_allow_html=True)
                         if transcripts is 'No Transcript':
                             st.write_stream(self.stream_data(transcripts + "Need to Implement/Transcribe automatically"))
@@ -189,52 +185,66 @@ class SocialMedia():
         with second_container:
             # st.markdown('<div class="second-container">', unsafe_allow_html=True)
             col_1,col_2 = st.columns(2)
+            
             with col_1:
+                st.subheader("Unique Users in Comments",divider='blue')
+                with col_1.container(height=600):
+                    unique_users = self.count_comments_per_author(comments_df=dataframe,
+                                                   video_id=video_id,
+                                                   )
+            with col_2:
                 st.subheader("Unique users in comments",divider='blue')
                 self.unique_users_comments_pie_chart(unique_users=unique_users)
 
-
-            with col_2:
-                st.container()
+                
 
             # st.markdown('</div>', unsafe_allow_html=True)
         
         return None
 
-    def most_sentiment_comments(self,dataframe,video_id):
-        
+    def most_sentiment_comments(self, dataframe, video_id):
         indent = '&ensp;&thinsp;&ensp;&thinsp;'
 
-        comments = dataframe[dataframe['video_id'] == video_id]
-        comments = comments[comments['author_name'].notna()]
+        # Filter comments for the given video_id and ensure 'author_name' is not null
+        comments = dataframe[(dataframe['video_id'] == video_id) & dataframe['author_name'].notna()]
 
+        # Check if any comments are available
         if comments.empty:
             st.write("No comments available for this video.")
             return
         
+        # Ensure 'sentiws_sentiment_comments' column exists
         if 'sentiws_sentiment_comments' not in comments.columns:
             st.error("Column 'sentiws_sentiment_comments' does not exist in the DataFrame.")
             return
         
-        if comments['sentiws_sentiment_comments'].dtype == 'object':
-            try:
-                comments['sentiment_score'] = comments['sentiws_sentiment_comments'].astype(float)
-            except ValueError:
-                st.error("Column 'sentiws_sentiment_comments' contains non-numeric values that cannot be converted to float.")
-                return
-        else:
-            comments['sentiment_score'] = comments['sentiws_sentiment_comments']
+        # Convert 'sentiws_sentiment_comments' to float if necessary, and handle non-numeric cases
+        try:
+            comments['sentiment_score'] = pd.to_numeric(comments['sentiws_sentiment_comments'], errors='coerce')
+            # Drop rows where sentiment_score is NaN due to conversion issues
+            comments = comments.dropna(subset=['sentiment_score'])
+        except ValueError:
+            st.error("Column 'sentiws_sentiment_comments' contains values that cannot be converted to float.")
+            return
 
+        # Check if there are valid sentiment scores after conversion
+        if comments.empty:
+            st.write("No valid sentiment scores available for this video.")
+            return
+
+        # Find most positive and most negative comments
         most_positive_comment = comments.loc[comments['sentiment_score'].idxmax()]
         most_negative_comment = comments.loc[comments['sentiment_score'].idxmin()]
-        
-        comments['sentiment_score'] = comments['sentiws_sentiment_comments']
 
-        most_positive_comment = comments.loc[comments['sentiment_score'].idxmax()]
-        most_negative_comment = comments.loc[comments['sentiment_score'].idxmin()]
-
-        st.markdown(f" :green-background[**Most Positive Comment:**]{indent} {':speech_balloon:'} **sentiment_score:** {most_positive_comment['sentiment_score']} \n\n{most_positive_comment['comment_text']}")
-        st.markdown(f" :red-background[**Most Negative Comment:**]{indent} {':speech_balloon:'} **sentiment_score:** {most_negative_comment['sentiment_score']} \n\n{most_negative_comment['comment_text']}")
+        # Display results using Streamlit
+        st.markdown(
+            f":green-background[**Most Positive Comment:**] {indent} :speech_balloon:  " 
+            f"**German Sentiment:** {ast.literal_eval(most_positive_comment['german_sentiment_comments'])[0][0]} {indent} {':speech_balloon:'} **Sentiws_Sentiment:** {most_positive_comment['sentiws_sentiment_comments']} \n\n{most_positive_comment['comment_text']}" 
+        )
+        st.markdown(
+            f":red-background[**Most Negative Comment:**] {indent} :speech_balloon: "
+            f"**German Sentiment:** {ast.literal_eval(most_negative_comment['german_sentiment_comments'])[0][0]} {indent} {':speech_balloon:'} **Sentiws_Sentiment:** {most_negative_comment['sentiws_sentiment_comments']} \n\n{most_negative_comment['comment_text']}"
+        )
 
 
     def unique_users_comments_pie_chart(self,unique_users):
