@@ -765,7 +765,7 @@ class PlotsLayout():
         text_df = dataframe[column_name].dropna()
         # Combine all text into a single string
         text = " ".join(review for review in text_df.tolist())
-        stop_words = np.loadtxt("/home/sathwik/college/student_job/ALSO_WebScraping/dashboard/utils/word_cloud_stopwords.txt",dtype=str)
+        stop_words = np.loadtxt("utils/word_cloud_stopwords.txt",dtype=str)
         filtered_text = " ".join([word for word in text.split() if word.lower() not in stop_words])
         # Generate Word Cloud
         wordcloud = WordCloud(width=450, height=250, background_color='white').generate(filtered_text)
