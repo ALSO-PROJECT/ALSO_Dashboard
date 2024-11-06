@@ -24,24 +24,40 @@ class SocialMedia():
             yield word + " "
             time.sleep(0.02)
 
-    def display_reconstructed_page(self,row_idx,dataframe):
-
-        # Hide this until user clicks on the data
-        platform = str(dataframe['platform'][row_idx])
-        title = str(dataframe['title'][row_idx])
-        description = str(dataframe['video_description'][row_idx])
-        video_url = str(dataframe['original_url'][row_idx])
-        views_count = str(dataframe['views_count'][row_idx])
-        likes_count = str(dataframe['like_count'][row_idx])
+    def display_reconstructed_page(self,row_video_id,dataframe):
         
-        comments_count = int(dataframe['comments_count'][row_idx]) 
-        subscribers_count = str(dataframe['subscribers_count'][row_idx])
-        transcripts = dataframe['transcript_german'][row_idx]
+        # Hide this until user clicks on the data
+        
+        dataframe['video_id'] = dataframe['video_id'].astype(str)
+        dataframe = dataframe[dataframe['video_id']==str(row_video_id)]
+        dataframe.reset_index(drop=True, inplace=True)
+
+        platform = str(dataframe.loc[0, 'platform'] )
+        title = str(dataframe['title'][0])
+        description = str(dataframe['video_description'][0])
+        
+        if platform.lower() == "youtube":
+            video_url = str(dataframe['original_url'][0])
+            comments_count = int(dataframe['comments_count'][0])
+        elif platform.lower() == "tiktok":
+            # Manually construct the TikTok URL using the video_id
+            video_id = str(dataframe['video_id'][0])
+            video_url = f"https://www.tiktok.com/@username/video/{video_id}"
+            comments_count = int(dataframe['comments_count'][0])
+        else:
+            video_url = None 
+
+        views_count = str(dataframe['views_count'][0])
+        likes_count = str(dataframe['like_count'][0])
+        
+        
+        subscribers_count = str(dataframe['subscribers_count'][0])
+        transcripts = dataframe['transcript_german'][0]
 
         # Date upload/extracted
-        date_uploaded = dataframe['upload_date'][row_idx].date()
-        date_extracted = dataframe['extracted_date'][row_idx].date()
-        video_id = dataframe['video_id'][row_idx]
+        date_uploaded = dataframe['upload_date'][0].date()
+        date_extracted = dataframe['extracted_date'][0].date()
+        video_id = dataframe['video_id'][0]
 
         # st.markdown(
         #             """
@@ -59,14 +75,17 @@ class SocialMedia():
             # st.markdown('<div class="reconstructed-page-container">', unsafe_allow_html=True)
             media_col,desc_col = st.columns(2,gap='medium')
             with media_col:
-                st.video(video_url,
+                if video_url:
+                    st.video(video_url,
                     loop=False,
                     autoplay=False,
                     muted=False,
                     format="video/mp4",
                     )
                 
-                st.markdown(f"**Post Url :** {dataframe['original_url'][row_idx]}")
+                    st.markdown(f"**Post Url :** {video_url}")
+                else:
+                    st.write("Video URL not available")
                 
                 with st.container(height=600):
                     st.subheader("Most Positive/Negative Comment Based on SentiWS",divider='blue')
@@ -98,16 +117,16 @@ class SocialMedia():
                 col2.markdown(f"\n **Likes:** {millify(likes_count)}")
                 anonymous = col1.checkbox("Anonymous")
                 if platform =='TikTok':
-                    video_duration = col2.markdown(f"\n**Video Duration:** {dataframe['video_duration'][row_idx]} sec")
+                    video_duration = col2.markdown(f"\n**Video Duration:** {dataframe['video_duration'][0]} sec")
                 elif platform =='YouTube':
-                    video_duration = col2.markdown(f"\n**Video Duration:** {dataframe['video_duration'][row_idx]}")
+                    video_duration = col2.markdown(f"\n**Video Duration:** {dataframe['video_duration'][0]}")
                 elif platform == 'Instagram':
-                    video_duration = col2.markdown(f"\n**Video Duration:** {dataframe['video_duration'][row_idx]} sec")
+                    video_duration = col2.markdown(f"\n**Video Duration:** {dataframe['video_duration'][0]} sec")
                 col2.write("   ")
                 
                 # Analyze the post
                 with col1:
-                    if st.button(label="Analyze Post"):
+                    if st.button(label="Download Video"):
                         self.plot_single_post(video_id,dataframe,main_container)
                         st.success(f"Results Ploted for the post_id: {video_id}")
                 # Download the post metadata
@@ -160,7 +179,8 @@ class SocialMedia():
                     #         )
                     with st.container(height=700):
                         indent = '&ensp;&thinsp;&ensp;&thinsp;'
-                        st.markdown(f'{dataframe["transcript_source"][row_idx]} {indent} {":speech_balloon:"} :green-background[**German_Sentiment_Score:**] {ast.literal_eval(dataframe["german_sentiment_transcript"][row_idx])[0][0]} {indent} {":speech_balloon:"} :green-background[**Sentiws_Sentiment_Score:**] {dataframe["sentiws_sentiment_transcript"][row_idx]}')
+                        st.markdown(f'{dataframe["transcript_source"][0]}')
+                        st.markdown(f'{":speech_balloon:"} :green-background[**German_Sentiment_Score:**] {ast.literal_eval(dataframe["german_sentiment_transcript"][0])[0][0]} {indent} {":speech_balloon:"} :green-background[**Sentiws_Sentiment_Score:**] {dataframe["sentiws_sentiment_transcript"][0]}')
                         # st.markdown('<div class="transcripts-container">', unsafe_allow_html=True)
                         if transcripts is 'No Transcript':
                             st.write_stream(self.stream_data(transcripts + "Need to Implement/Transcribe automatically"))
@@ -204,21 +224,15 @@ class SocialMedia():
 
     def most_sentiment_comments(self, dataframe, video_id):
         indent = '&ensp;&thinsp;&ensp;&thinsp;'
-
-        # Filter comments for the given video_id and ensure 'author_name' is not null
         comments = dataframe[(dataframe['video_id'] == video_id) & dataframe['author_name'].notna()]
-
-        # Check if any comments are available
         if comments.empty:
             st.write("No comments available for this video.")
             return
         
-        # Ensure 'sentiws_sentiment_comments' column exists
-        if 'sentiws_sentiment_comments' not in comments.columns:
-            st.error("Column 'sentiws_sentiment_comments' does not exist in the DataFrame.")
+        if 'german_sentiment_comments' not in comments.columns or 'sentiws_sentiment_comments' not in comments.columns:
+            st.error("Required columns 'german_sentiment_comments' or 'sentiws_sentiment_comments' do not exist in the DataFrame.")
             return
         
-        # Convert 'sentiws_sentiment_comments' to float if necessary, and handle non-numeric cases
         try:
             comments['sentiment_score'] = pd.to_numeric(comments['sentiws_sentiment_comments'], errors='coerce')
             # Drop rows where sentiment_score is NaN due to conversion issues
@@ -227,24 +241,60 @@ class SocialMedia():
             st.error("Column 'sentiws_sentiment_comments' contains values that cannot be converted to float.")
             return
 
-        # Check if there are valid sentiment scores after conversion
         if comments.empty:
             st.write("No valid sentiment scores available for this video.")
             return
+        
+        positive_comments = []
+        negative_comments = []
+        neutral_comments = []
 
-        # Find most positive and most negative comments
-        most_positive_comment = comments.loc[comments['sentiment_score'].idxmax()]
-        most_negative_comment = comments.loc[comments['sentiment_score'].idxmin()]
+        for index, row in comments.iterrows():
+            
+            sentiment_data = ast.literal_eval(row['german_sentiment_comments'])
+            sentiment_label = sentiment_data[0][0]
+            sentiment_score = row['sentiws_sentiment_comments']
+
+            if sentiment_label == 'positive':
+                positive_comments.append((index, sentiment_score, row))
+            elif sentiment_label == 'negative':
+                negative_comments.append((index, sentiment_score, row))
+            elif sentiment_label == 'neutral':
+                neutral_comments.append((index, sentiment_score, row))
+
+        if positive_comments:
+            # Sort the positive comments based on sentiment_score
+            most_positive_comment = max(positive_comments, key=lambda x: x[1])[2]
+            st.markdown(
+                f":green-background[**Most Positive Comment:**] {indent} :speech_balloon: "
+                f"**German Sentiment:** {ast.literal_eval(most_positive_comment['german_sentiment_comments'])[0][0]} {indent} "
+                f"**Sentiws_Sentiment:** {most_positive_comment['sentiws_sentiment_comments']} \n\n{most_positive_comment['comment_text']}"
+            )
+        else:
+            st.write("No positive comments available for sentiment analysis.")
+
+        if negative_comments:
+            # Sort the negative comments based on sentiment_score (lower score is more negative)
+            most_negative_comment = min(negative_comments, key=lambda x: x[1])[2]
+            st.markdown(
+                f":red-background[**Most Negative Comment:**] {indent} :speech_balloon: "
+                f"**German Sentiment:** {ast.literal_eval(most_negative_comment['german_sentiment_comments'])[0][0]} {indent} "
+                f"**Sentiws_Sentiment:** {most_negative_comment['sentiws_sentiment_comments']} \n\n{most_negative_comment['comment_text']}"
+            )
+        else:
+            st.write("No negative comments available for sentiment analysis.")
+
+
 
         # Display results using Streamlit
-        st.markdown(
-            f":green-background[**Most Positive Comment:**] {indent} :speech_balloon:  " 
-            f"**German Sentiment:** {ast.literal_eval(most_positive_comment['german_sentiment_comments'])[0][0]} {indent} {':speech_balloon:'} **Sentiws_Sentiment:** {most_positive_comment['sentiws_sentiment_comments']} \n\n{most_positive_comment['comment_text']}" 
-        )
-        st.markdown(
-            f":red-background[**Most Negative Comment:**] {indent} :speech_balloon: "
-            f"**German Sentiment:** {ast.literal_eval(most_negative_comment['german_sentiment_comments'])[0][0]} {indent} {':speech_balloon:'} **Sentiws_Sentiment:** {most_negative_comment['sentiws_sentiment_comments']} \n\n{most_negative_comment['comment_text']}"
-        )
+        # st.markdown(
+        #     f":green-background[**Most Positive Comment:**] {indent} :speech_balloon:  " 
+        #     f"**German Sentiment:** {ast.literal_eval(most_positive_comment['german_sentiment_comments'])[0][0]} {indent} {':speech_balloon:'} **Sentiws_Sentiment:** {most_positive_comment['sentiws_sentiment_comments']} \n\n{most_positive_comment['comment_text']}" 
+        # )
+        # st.markdown(
+        #     f":red-background[**Most Negative Comment:**] {indent} :speech_balloon: "
+        #     f"**German Sentiment:** {ast.literal_eval(most_negative_comment['german_sentiment_comments'])[0][0]} {indent} {':speech_balloon:'} **Sentiws_Sentiment:** {most_negative_comment['sentiws_sentiment_comments']} \n\n{most_negative_comment['comment_text']}"
+        # )
 
 
     def unique_users_comments_pie_chart(self,unique_users):
@@ -329,7 +379,14 @@ class SocialMedia():
         return {author: f'user{i}' for i, author in enumerate(unique_authors)}
     
     def display_comments(self,video_id,df,anonymous_dict,platform):
+        if platform == "TikTok":
+            column_name = 'replied_to_comment_id'
+            first_nan_index = df[df[column_name].isna()].index[0]
+            # Replace all NaNs with 'root', except for the first NaN
+            df.loc[df.index != first_nan_index, column_name] = df.loc[df.index != first_nan_index, column_name].fillna('root') 
+        
         comments = df[df['video_id'] == video_id]
+        
         root_comments = comments[comments['replied_to_comment_id'] == 'root']
 
         for _, comment in root_comments.iterrows():
@@ -351,7 +408,7 @@ class SocialMedia():
         else:
             author_name = comment['author_name']
             author_name = anonymous_dict[author_name]
-        
+
         sentiment_score = self.eval_safe(comment['german_sentiment_comments'])
         if sentiment_score[0][0] == 'positive':
             sentiment_text = ':smiley:'
@@ -361,7 +418,7 @@ class SocialMedia():
             sentiment_text = ':neutral_face:'
         
         st.markdown(f"""
-        👤 **{author_name}** {indent}❤️ {int(comment['comment_likes'])} {indent} {':speech_balloon:'} **sentiment_german:** {sentiment_text} **sentiment_sentiws:** {float(comment['sentiws_sentiment_comments'])}
+        👤 **{author_name}** {indent}❤️ {int(comment['comment_likes'])} {indent} {':speech_balloon:'} **sentiment_german:** {sentiment_text} {indent} {':speech_balloon:'} **sentiment_sentiws:** {float(comment['sentiws_sentiment_comments'])}
         """)
         st.markdown(f"{indent}{comment['comment_text']}")
 
@@ -389,7 +446,7 @@ class SocialMedia():
 
             st.markdown(f"{indent}***Reply***")
             st.markdown(f"""
-                {indent} 👤 **{author_name}** {indent}❤️ {int(reply['comment_likes'])} {indent} {':speech_balloon:'} **sentiment_german:** {sentiment_text} **sentiment_sentiws:** {float(reply['sentiws_sentiment_comments'])}
+                {indent} 👤 **{author_name}** {indent}❤️ {int(reply['comment_likes'])} {indent} {':speech_balloon:'} **sentiment_german:** {sentiment_text} {indent} {':speech_balloon:'} **sentiment_sentiws:** {float(reply['sentiws_sentiment_comments'])}
                 """)
             st.markdown(f"{indent}{indent}{reply['comment_text']}")
             # self.display_comment(reply, level)
