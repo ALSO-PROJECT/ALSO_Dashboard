@@ -78,7 +78,9 @@ class SocialMediaLayout():
                     file_name=f"Social_media_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
                     mime="csv",
                 )
-            received_data = st.dataframe(self.display_dataframe(filtered_df),
+            display_dataframe = self.display_dataframe(filtered_df)
+            display_dataframe.reset_index(drop=True, inplace=True)
+            received_data = st.dataframe(display_dataframe,
                                         use_container_width=True,
                                         on_select='rerun',
                                         selection_mode=['single-row'],
@@ -86,10 +88,11 @@ class SocialMediaLayout():
                                         )
             print("\nReceived Data : ",received_data)
             # st.markdown('</div>', unsafe_allow_html=True)
-            
+
         if received_data["selection"]["rows"]:
             row_idx = received_data['selection']['rows'][0]
-            SocialMedia().display_reconstructed_page(row_idx,dataframe=filtered_df)
+            row_video_id = display_dataframe['video_id'][row_idx]
+            SocialMedia().display_reconstructed_page(row_video_id,dataframe=filtered_df)
 
     def create_filters(self):
         save_button, load_button = st.columns(2)
@@ -124,7 +127,7 @@ class SocialMediaLayout():
 
         # Set the data types for the pandas dataframe
         dataframe = pd.read_csv(self.dataframe_dict[self.filters['corpus_select']],low_memory=False)
-        self.set_dataframe_format(dataframe,corpus_select)
+        dataframe = self.set_dataframe_format(dataframe,corpus_select)
 
         # Filters for hashtag and profile names
         if not corpus_select == 'influencer_korpus':
@@ -186,7 +189,7 @@ class SocialMediaLayout():
                 if selected_filters:
                     filtered_df = filtered_df[filtered_df['media_type'].isin(selected_filters)]
 
-
+        
         # Second stage filters
         with second_col:
             start_date_filter, end_date_filter = st.columns(2)
@@ -235,6 +238,7 @@ class SocialMediaLayout():
 
         # third stage filter        
         filtered_df['comments_count'] = pd.to_numeric(filtered_df['comments_count'], errors='coerce').fillna(0).astype(int)
+        filtered_df['subscribers_count'] = pd.to_numeric(filtered_df['subscribers_count'], errors='coerce').fillna(0).astype(int)
         with third_col:
             views_slider = st.slider("Views",
                                 min_value=int(filtered_df['views_count'].min()), 
@@ -302,7 +306,6 @@ class SocialMediaLayout():
                 filtered_df = filtered_df[filtered_df['video_id'] == video_id_input]
                 st.write(f"Showing data for Video ID: {video_id_input}")
         
-        filtered_df.loc[filtered_df['platform'] == 'TikTok', 'replied_to_comment_id'] = 'root'
         filtered_df = filtered_df.reset_index(drop=True)
 
         return filtered_df
@@ -353,7 +356,7 @@ class SocialMediaLayout():
                                 "like_count":"Int64",
                                 "time_stamp":"string",
                                 "transcript_german":"string",
-                                "extracted_date":"datetime64[ns]",
+                                # "extracted_date":"datetime64[ns]",
                                 f"{col_key}":"category", # For influencer corpus there is no hashtag only profilename
                                 "platform":"category",
                                 "media_type":"category",
@@ -364,18 +367,21 @@ class SocialMediaLayout():
                                 "comment_id":"category",
                                 "replied_to_comment_id":"category",
                                 "comment_date":"datetime64[ns]",
-                                "upload_date":"datetime64[ns]",
+                                # "upload_date":"datetime64[ns]",
                             }
         try:
             dataframe.astype(mapping_types_conversion)
-            # Replace 'No subscribers count' with 0 for TikTok
-            dataframe.loc[(dataframe['platform'] == 'TikTok') & (dataframe['subscribers_count'] == 'No subscribers count'), 'subscribers_count'] = 0
-            dataframe['subscribers_count'] = self.safe_convert_to_int(dataframe['subscribers_count'])
-            dataframe["upload_date"] = pd.to_datetime(dataframe["upload_date"], errors='coerce')
-            dataframe["comment_date"] = pd.to_datetime(dataframe["comment_date"], errors='coerce')
-            dataframe["extracted_date"] = pd.to_datetime(dataframe["extracted_date"], errors='coerce')
         except Exception as e:
             st.error(e)
+        # Replace 'No subscribers count' with 0 for TikTok
+        dataframe.loc[(dataframe['platform'] == 'TikTok') & (dataframe['subscribers_count'] == 'No subscribers count'), 'subscribers_count'] = 0
+        dataframe['subscribers_count'] = self.safe_convert_to_int(dataframe['subscribers_count'])
+        dataframe["upload_date"] = pd.to_datetime(dataframe["upload_date"], errors='coerce')
+        dataframe["comment_date"] = pd.to_datetime(dataframe["comment_date"], errors='coerce')
+        dataframe["extracted_date"] = pd.to_datetime(dataframe["extracted_date"], errors='coerce')
+        
+
+        return dataframe
 
     def safe_convert_to_int(self,column):
         column_numeric = pd.to_numeric(column, errors='coerce')
