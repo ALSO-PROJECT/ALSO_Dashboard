@@ -1015,7 +1015,7 @@ class PlotsLayout():
                                 "like_count":"Int64",
                                 "time_stamp":"string",
                                 "transcript_german":"string",
-                                "extracted_date":"datetime64[ns]",
+                                # "extracted_date":"datetime64[ns]",
                                 f"{col_key}":"category", # spanch for influencer corpus there is no hashtag only profilename
                                 "platform":"category",
                                 "media_type":"category",
@@ -1026,7 +1026,7 @@ class PlotsLayout():
                                 "comment_id":"category",
                                 "replied_to_comment_id":"category",
                                 "comment_date":"datetime64[ns]",
-                                "upload_date":"datetime64[ns]",
+                                # "upload_date":"datetime64[ns]",
                             }
         try:
             dataframe.astype(mapping_types_conversion)
