@@ -13,6 +13,10 @@ import plotly.graph_objects as go
 import streamlit as st
 import io
 import ast
+import os
+import yt_dlp
+from pathlib import Path
+import re
 
 class SocialMedia():
 
@@ -127,8 +131,20 @@ class SocialMedia():
                 # Analyze the post
                 with col1:
                     if st.button(label="Download Video"):
-                        self.plot_single_post(video_id,dataframe,main_container)
-                        st.success(f"Results Ploted for the post_id: {video_id}")
+
+                        save_path = str(Path.cwd())
+                        video_path = self.download_video(video_id, platform, save_path)
+                        
+                        if video_path:
+                            with open(video_path, "rb") as file:
+                                video_bytes = file.read()
+                                st.download_button(
+                                    label="Click to download video",
+                                    data=video_bytes,
+                                    file_name=f"{platform}_{video_id}.mp4",
+                                    mime="video/mp4"
+                                )
+                            st.success(f"Downloaded the video with post_id: {video_id}")
                 # Download the post metadata
                 with col2:
                     if st.download_button(label="Download Post Data",
@@ -221,7 +237,37 @@ class SocialMedia():
             # st.markdown('</div>', unsafe_allow_html=True)
         
         return None
-
+    
+    
+    def download_video(self, video_id, platform, save_path):
+        st.warning(platform)
+        
+        if platform.lower() == 'youtube':
+            url = f'https://www.youtube.com/watch?v={video_id}'
+        elif platform.lower() == 'tiktok':
+            url = f'https://www.tiktok.com/@user/video/{video_id}'
+        else:
+            raise ValueError("Unsupported platform. Use 'youtube' or 'tiktok'.")
+        
+        os.makedirs(save_path, exist_ok=True)
+        video_path = os.path.join(save_path, f'{video_id}.mp4')
+        
+        ydl_opts = {
+            'format': 'bestvideo+bestaudio/best',
+            'outtmpl': video_path,
+            'merge_output_format': 'mp4',
+            'quiet': True,
+        }
+        
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([url])
+            st.success(f"Downloaded the video with post_id: {video_id}")
+            return video_path
+        except yt_dlp.utils.DownloadError as e:
+            st.error(f"Failed to download video ID {video_id} from {platform}: {e}")
+            return None
+    
     def most_sentiment_comments(self, dataframe, video_id):
         indent = '&ensp;&thinsp;&ensp;&thinsp;'
         comments = dataframe[(dataframe['video_id'] == video_id) & dataframe['author_name'].notna()]
