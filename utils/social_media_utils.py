@@ -253,10 +253,11 @@ class SocialMedia():
         video_path = os.path.join(save_path, f'{video_id}.mp4')
         
         ydl_opts = {
-            'format': 'bestvideo+bestaudio/best',
+            'format': 'best',
             'outtmpl': video_path,
             'merge_output_format': 'mp4',
             'quiet': True,
+            'no_color': True,
         }
         
         try:
