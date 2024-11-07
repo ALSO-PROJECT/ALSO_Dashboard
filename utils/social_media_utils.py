@@ -17,6 +17,7 @@ import os
 import yt_dlp
 from pathlib import Path
 import re
+import imageio_ffmpeg as ffmpeg
 
 class SocialMedia():
 
@@ -144,7 +145,7 @@ class SocialMedia():
                                     file_name=f"{platform}_{video_id}.mp4",
                                     mime="video/mp4"
                                 )
-                            st.success(f"Downloaded the video with post_id: {video_id}")
+                            # st.success(f"Downloaded the video with post_id: {video_id}")
                 # Download the post metadata
                 with col2:
                     if st.download_button(label="Download Post Data",
@@ -240,7 +241,7 @@ class SocialMedia():
     
     
     def download_video(self, video_id, platform, save_path):
-        st.warning(platform)
+        st.warning(f"Downloading the video from {platform}")
         
         if platform.lower() == 'youtube':
             url = f'https://www.youtube.com/watch?v={video_id}'
@@ -252,12 +253,17 @@ class SocialMedia():
         os.makedirs(save_path, exist_ok=True)
         video_path = os.path.join(save_path, f'{video_id}.mp4')
         
+        # Path to ffmpeg from imageio-ffmpeg
+        ffmpeg_path = ffmpeg.get_ffmpeg_exe()
+        
+        # yt-dlp options for downloading video with audio
         ydl_opts = {
-            'format': 'best',
-            'outtmpl': video_path,
+            'format': 'bestvideo+bestaudio/best',
+            'outtmpl': os.path.join(save_path, f'{video_id}.mp4'),
             'merge_output_format': 'mp4',
             'quiet': True,
             'no_color': True,
+            'ffmpeg_location': ffmpeg_path
         }
         
         try:
