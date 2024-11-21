@@ -55,8 +55,8 @@ class SocialMediaLayout():
 
         self.dataframe_dict = dataframe_dict
         
-        filtered_df = self.create_filters()
-        
+        filtered_df,corpus_select = self.create_filters()
+
         # st.markdown(
         #             """
         #             <style>
@@ -92,7 +92,7 @@ class SocialMediaLayout():
         if received_data["selection"]["rows"]:
             row_idx = received_data['selection']['rows'][0]
             row_video_id = display_dataframe['video_id'][row_idx]
-            SocialMedia().display_reconstructed_page(row_video_id,dataframe=filtered_df)
+            SocialMedia().display_reconstructed_page(corpus_select,row_video_id,dataframe=filtered_df)
 
     def create_filters(self):
         save_button, load_button = st.columns(2)
@@ -308,7 +308,7 @@ class SocialMediaLayout():
         
         filtered_df = filtered_df.reset_index(drop=True)
 
-        return filtered_df
+        return filtered_df,corpus_select
 
     def extract_primary_sentiment(self,sentiment_data):
         try:
@@ -335,7 +335,6 @@ class SocialMediaLayout():
         dataframe['subscribers_count'] = dataframe['subscribers_count'].fillna(0)
         dataframe['like_count'] = dataframe['like_count'].fillna(0)
         dataframe['comments_count'] = dataframe['comments_count'].fillna(0)
-        dataframe['comment_likes'] = dataframe['comment_likes'].fillna(0)
 
         if corpus_select == 'influencer_korpus':
             col_key = 'profile_name'
@@ -361,7 +360,7 @@ class SocialMediaLayout():
                                 "platform":"category",
                                 "media_type":"category",
                                 "comment_text":"string",
-                                "comment_likes":"Int64",
+                                # "comment_likes":"Int64",
                                 "author_name":"string",
                                 "author_id":"category",
                                 "comment_id":"category",
@@ -372,14 +371,14 @@ class SocialMediaLayout():
         try:
             dataframe.astype(mapping_types_conversion)
         except Exception as e:
-            st.error(e)
+            st.error(f"The error is {e}")
         # Replace 'No subscribers count' with 0 for TikTok
         dataframe.loc[(dataframe['platform'] == 'TikTok') & (dataframe['subscribers_count'] == 'No subscribers count'), 'subscribers_count'] = 0
         dataframe['subscribers_count'] = self.safe_convert_to_int(dataframe['subscribers_count'])
         dataframe["upload_date"] = pd.to_datetime(dataframe["upload_date"], errors='coerce')
         dataframe["comment_date"] = pd.to_datetime(dataframe["comment_date"], errors='coerce')
-        dataframe["extracted_date"] = pd.to_datetime(dataframe["extracted_date"], errors='coerce')
-        
+        # dataframe["extracted_date"] = pd.to_datetime(dataframe["extracted_date"], errors='coerce')
+        dataframe['comment_likes'] = dataframe['comment_likes'].fillna(0.0)
 
         return dataframe
 

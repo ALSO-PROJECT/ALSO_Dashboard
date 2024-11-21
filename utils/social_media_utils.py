@@ -29,7 +29,7 @@ class SocialMedia():
             yield word + " "
             time.sleep(0.02)
 
-    def display_reconstructed_page(self,row_video_id,dataframe):
+    def display_reconstructed_page(self,corpus_select,row_video_id,dataframe):
         
         # Hide this until user clicks on the data
         
@@ -43,17 +43,20 @@ class SocialMedia():
         
         if platform.lower() == "youtube":
             video_url = str(dataframe['original_url'][0])
-            comments_count = int(dataframe['comments_count'][0])
+            # comments_count = int(dataframe['comments_count'][0])
+            comments_count = max(len(dataframe) - 1, 0)
         elif platform.lower() == "tiktok":
             # Manually construct the TikTok URL using the video_id
             video_id = str(dataframe['video_id'][0])
             video_url = f"https://www.tiktok.com/@username/video/{video_id}"
-            comments_count = int(dataframe['comments_count'][0])
-        else:
-            video_url = None 
+            # comments_count = int(dataframe['comments_count'][0])
+            comments_count = max(len(dataframe) - 1, 0)
+        elif platform.lower()=='instagram':
+            video_url = f"https://instagram.com/p/{video_id}"
+            comments_count = max(len(dataframe) - 1, 0)
 
         views_count = str(dataframe['views_count'][0])
-        likes_count = str(dataframe['like_count'][0])
+        likes_count = dataframe['like_count'][0]
         
         
         subscribers_count = str(dataframe['subscribers_count'][0])
@@ -61,7 +64,20 @@ class SocialMedia():
 
         # Date upload/extracted
         date_uploaded = dataframe['upload_date'][0].date()
-        date_extracted = dataframe['extracted_date'][0].date()
+
+        if platform.lower() == 'tiktok':
+            date_extracted = dataframe['extracted_date'][0]
+        elif platform.lower() == 'youtube':
+            if corpus_select == 'influencer_korpus':
+                date_extracted = dataframe['extracted_date'][0]
+            else:
+                try:
+                    timestamp = float(dataframe['extracted_date'][0])
+                    dt_object = datetime.datetime.utcfromtimestamp(timestamp)
+                    date_extracted = dt_object.strftime('%d.%m.%Y')
+                except Exception as e:
+                    st.error (f"Error: {e}") 
+        
         video_id = dataframe['video_id'][0]
 
         # st.markdown(
@@ -89,6 +105,7 @@ class SocialMedia():
                     )
                 
                     st.markdown(f"**Post Url :** {video_url}")
+
                 else:
                     st.write("Video URL not available")
                 
@@ -128,7 +145,7 @@ class SocialMedia():
                 elif platform == 'Instagram':
                     video_duration = col2.markdown(f"\n**Video Duration:** {dataframe['video_duration'][0]} sec")
                 col2.write("   ")
-                
+
                 # Analyze the post
                 with col1:
                     if st.button(label="Download Video"):
@@ -420,10 +437,23 @@ class SocialMedia():
         df.to_csv(output, index=False)
         return output.getvalue()
     
+    # def eval_safe(self,val):
+    #     try:
+    #         return eval(val)
+    #     except (SyntaxError, NameError):
+    #         return None
+        
     def eval_safe(self,val):
         try:
-            return eval(val)
-        except (SyntaxError, NameError):
+            # Check if the value is a string
+            if isinstance(val, str):
+                return eval(val)
+            else:
+                # If not a string, return the value as is or handle accordingly
+                return val
+        except Exception as e:
+            # Handle evaluation errors gracefully
+            print(f"Error in eval_safe with value {val}: {e}")
             return None 
     
     def create_anonymous_mapping(self,df,video_id):
@@ -432,6 +462,7 @@ class SocialMedia():
         return {author: f'user{i}' for i, author in enumerate(unique_authors)}
     
     def display_comments(self,video_id,df,anonymous_dict,platform):
+        
         if platform == "TikTok":
             column_name = 'replied_to_comment_id'
             first_nan_index = df[df[column_name].isna()].index[0]
@@ -442,11 +473,12 @@ class SocialMedia():
         
         root_comments = comments[comments['replied_to_comment_id'] == 'root']
 
+        
         for _, comment in root_comments.iterrows():
             self.display_comment(comment,
                                  anonymous_dict
                                  )
-            if platform == 'YouTube':
+            if platform == 'YouTube' or 'TikTok':
                 self.display_replies(comment['comment_id'],
                                  comments,
                                  anonymous_dict
@@ -463,13 +495,16 @@ class SocialMedia():
             author_name = anonymous_dict[author_name]
 
         sentiment_score = self.eval_safe(comment['german_sentiment_comments'])
-        if sentiment_score[0][0] == 'positive':
+
+        if pd.isna(sentiment_score):
+            sentiment_text = ':grey_question:'
+        elif sentiment_score[0][0] == 'positive':
             sentiment_text = ':smiley:'
         elif sentiment_score[0][0] == 'negative':
             sentiment_text = ':rage:'
         elif sentiment_score[0][0] == 'neutral':
             sentiment_text = ':neutral_face:'
-        
+
         st.markdown(f"""
         👤 **{author_name}** {indent}❤️ {int(comment['comment_likes'])} {indent} {':speech_balloon:'} **sentiment_german:** {sentiment_text} {indent} {':speech_balloon:'} **sentiment_sentiws:** {float(comment['sentiws_sentiment_comments'])}
         """)
@@ -483,6 +518,8 @@ class SocialMedia():
         for _, reply in replies.iterrows():
 
             sentiment_score = self.eval_safe(reply['german_sentiment_comments'])
+            if pd.isna(sentiment_score):
+                sentiment_text = ':grey_question:'
             if sentiment_score[0][0] == 'positive':
                 sentiment_text = ':smiley:'
             elif sentiment_score[0][0] == 'negative':
@@ -503,4 +540,4 @@ class SocialMedia():
                 """)
             st.markdown(f"{indent}{indent}{reply['comment_text']}")
             # self.display_comment(reply, level)
-            self.display_replies(reply['comment_id'], comments,anonymous_dict)
+            # self.display_replies(reply['comment_id'], comments,anonymous_dict)
