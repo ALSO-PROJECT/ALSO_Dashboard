@@ -33,6 +33,8 @@ class ALSO_DASHBOARD:
                     'Säulenübergreifend_korpus':DATABASE_DIR+'/Säulenübergreifend_korpus.csv',
                     
                     'influencer_korpus':DATABASE_DIR+'/influencer_korpus.csv',
+
+                    'Top_50_Posts_Report':DATABASE_DIR+'/Top_50_Posts_Report.csv'
                     }
 
         with st.sidebar:
