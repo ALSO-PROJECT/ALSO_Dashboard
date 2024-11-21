@@ -52,6 +52,7 @@ class SocialMedia():
             # comments_count = int(dataframe['comments_count'][0])
             comments_count = max(len(dataframe) - 1, 0)
         elif platform.lower()=='instagram':
+            video_id = str(dataframe['video_id'][0])
             video_url = f"https://instagram.com/p/{video_id}"
             comments_count = max(len(dataframe) - 1, 0)
 
@@ -77,6 +78,8 @@ class SocialMedia():
                     date_extracted = dt_object.strftime('%d.%m.%Y')
                 except Exception as e:
                     st.error (f"Error: {e}") 
+        elif platform.lower() == 'instagram':
+            date_extracted = dataframe['extracted_date'][0].split(" ")[0]
         
         video_id = dataframe['video_id'][0]
 
@@ -148,7 +151,8 @@ class SocialMedia():
 
                 # Analyze the post
                 with col1:
-                    if st.button(label="Download Video"):
+                    button_disabled = platform == 'Instagram'
+                    if st.button(label="Download Video", disabled=button_disabled):
 
                         save_path = str(Path.cwd())
                         video_path = self.download_video(video_id, platform, save_path)
@@ -463,7 +467,7 @@ class SocialMedia():
     
     def display_comments(self,video_id,df,anonymous_dict,platform):
         
-        if platform == "TikTok":
+        if platform == "TikTok" or "Instagram":
             column_name = 'replied_to_comment_id'
             first_nan_index = df[df[column_name].isna()].index[0]
             # Replace all NaNs with 'root', except for the first NaN
@@ -478,7 +482,7 @@ class SocialMedia():
             self.display_comment(comment,
                                  anonymous_dict
                                  )
-            if platform == 'YouTube' or 'TikTok':
+            if platform == 'YouTube' or 'TikTok' or 'Instagram':
                 self.display_replies(comment['comment_id'],
                                  comments,
                                  anonymous_dict
@@ -496,7 +500,9 @@ class SocialMedia():
 
         sentiment_score = self.eval_safe(comment['german_sentiment_comments'])
 
-        if pd.isna(sentiment_score):
+        
+        if pd.isna(sentiment_score) or type(sentiment_score)==float:
+            sentiment_score = 'neutral'
             sentiment_text = ':grey_question:'
         elif sentiment_score[0][0] == 'positive':
             sentiment_text = ':smiley:'
@@ -518,7 +524,9 @@ class SocialMedia():
         for _, reply in replies.iterrows():
 
             sentiment_score = self.eval_safe(reply['german_sentiment_comments'])
-            if pd.isna(sentiment_score):
+           
+            if pd.isna(sentiment_score) or type(sentiment_score)==float:
+                sentiment_score = 'neutral'
                 sentiment_text = ':grey_question:'
             if sentiment_score[0][0] == 'positive':
                 sentiment_text = ':smiley:'

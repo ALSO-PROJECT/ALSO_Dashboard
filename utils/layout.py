@@ -67,32 +67,36 @@ class SocialMediaLayout():
         #             """,
         #             unsafe_allow_html=True
         #         )
-        # Hide this until you get the data.   
-        with st.container(height=600):
-            # st.markdown('<div class="layout-page-container">', unsafe_allow_html=True)
-            cl_1,cl_2,cl_3 = st.columns(3)
-            cl_1.success('Displaying data for the selected filters')
-            cl_3.download_button(
-                    label="Download as csv",
-                    data=filtered_df.to_csv(),
-                    file_name=f"Social_media_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-                    mime="csv",
-                )
-            display_dataframe = self.display_dataframe(filtered_df)
-            display_dataframe.reset_index(drop=True, inplace=True)
-            received_data = st.dataframe(display_dataframe,
-                                        use_container_width=True,
-                                        on_select='rerun',
-                                        selection_mode=['single-row'],
-                                        height=500,
-                                        )
-            print("\nReceived Data : ",received_data)
-            # st.markdown('</div>', unsafe_allow_html=True)
+        # Hide this until you get the data.  
+        # 
+        if filtered_df.empty:
+            st.warning("No posts available for the selected filters.")
+        else:
+            with st.container(height=600):
+                # st.markdown('<div class="layout-page-container">', unsafe_allow_html=True)
+                cl_1,cl_2,cl_3 = st.columns(3)
+                cl_1.success('Displaying data for the selected filters')
+                cl_3.download_button(
+                        label="Download as csv",
+                        data=filtered_df.to_csv(),
+                        file_name=f"Social_media_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                        mime="csv",
+                    )
+                display_dataframe = self.display_dataframe(filtered_df)
+                display_dataframe.reset_index(drop=True, inplace=True)
+                received_data = st.dataframe(display_dataframe,
+                                            use_container_width=True,
+                                            on_select='rerun',
+                                            selection_mode=['single-row'],
+                                            height=500,
+                                            )
+                print("\nReceived Data : ",received_data)
+                # st.markdown('</div>', unsafe_allow_html=True)
 
-        if received_data["selection"]["rows"]:
-            row_idx = received_data['selection']['rows'][0]
-            row_video_id = display_dataframe['video_id'][row_idx]
-            SocialMedia().display_reconstructed_page(corpus_select,row_video_id,dataframe=filtered_df)
+            if received_data["selection"]["rows"]:
+                row_idx = received_data['selection']['rows'][0]
+                row_video_id = display_dataframe['video_id'][row_idx]
+                SocialMedia().display_reconstructed_page(corpus_select,row_video_id,dataframe=filtered_df)
 
     def create_filters(self):
         save_button, load_button = st.columns(2)
@@ -176,19 +180,22 @@ class SocialMediaLayout():
                     filtered_df = filtered_df[filtered_df['media_type'] == 'video']
             if 'Instagram' in platform:
                 st.caption("Instagram Filters")
-                posts_col,reels_col,carousel_col = st.columns(3,vertical_alignment='top')
-                posts_filter,reels_filter,carousel_filter = posts_col.checkbox('Posts',disabled=False),reels_col.checkbox('Reels',disabled=False),carousel_col.checkbox('Carousel',disabled=False)
+                posts_col,reels_col = st.columns(2,vertical_alignment='top')
+                posts_filter,reels_filter = posts_col.checkbox('Posts',disabled=False),reels_col.checkbox('Reels',disabled=False)
                 selected_filters = []
                 if posts_filter:
                     selected_filters.append('Posts')
                 if reels_filter:
                     selected_filters.append('Reels')
-                if carousel_filter:
-                    selected_filters.append('Carousel')
 
                 if selected_filters:
+                    filtered_df['is_video'] = filtered_df['is_video'].astype(bool)
+                    filtered_df['media_type'] = filtered_df['is_video'].apply(lambda x: 'Reels' if x else 'Posts')
+                    # Now filter the dataframe based on the selected filters (Post or Reel)
                     filtered_df = filtered_df[filtered_df['media_type'].isin(selected_filters)]
-
+            if filtered_df.empty:
+                    st.warning("No posts available for the selected filters.")
+                    return pd.DataFrame(),corpus_select
         
         # Second stage filters
         with second_col:
@@ -239,35 +246,93 @@ class SocialMediaLayout():
         # third stage filter        
         filtered_df['comments_count'] = pd.to_numeric(filtered_df['comments_count'], errors='coerce').fillna(0).astype(int)
         filtered_df['subscribers_count'] = pd.to_numeric(filtered_df['subscribers_count'], errors='coerce').fillna(0).astype(int)
+
         with third_col:
-            views_slider = st.slider("Views",
-                                min_value=int(filtered_df['views_count'].min()), 
-                                max_value=int(filtered_df['views_count'].max()), 
-                                value=(int(filtered_df['views_count'].min()), int(filtered_df['views_count'].max())))
+            # Initialize the sliders based on platform type
+            if 'YouTube' in platform or 'TikTok' in platform  or platform == []:
+                views_slider = st.slider(
+                    "Views",
+                    min_value=int(filtered_df['views_count'].min()), 
+                    max_value=int(filtered_df['views_count'].max()), 
+                    value=(int(filtered_df['views_count'].min()), int(filtered_df['views_count'].max()))
+                )
+                filtered_df = filtered_df[
+                    (filtered_df['views_count'] >= views_slider[0]) & (filtered_df['views_count'] <= views_slider[1])
+                ]
+            else:
+                views_slider = None  # Set to None for Instagram since there are no view counts
 
-            if 'YouTube' in platform:
-                subscribers_slider = st.slider("Subscribers",
-                                        min_value=int(filtered_df['subscribers_count'].min()), 
-                                        max_value=int(filtered_df['subscribers_count'].max()), 
-                                        value=(int(filtered_df['subscribers_count'].min()), int(filtered_df['subscribers_count'].max())))
-                filtered_df = filtered_df[(filtered_df['subscribers_count'] >= subscribers_slider[0]) & (filtered_df['subscribers_count'] <= subscribers_slider[1])]
-            
-            likes_slider = st.slider("Likes",
-                                    min_value=int(filtered_df['like_count'].min()), 
-                                    max_value=int(filtered_df['like_count'].max()), 
-                                    value=(int(filtered_df['like_count'].min()), int(filtered_df['like_count'].max())))
-            
-            comments_slider = st.slider("Comments",
-                                        min_value=int(filtered_df['comments_count'].min()), 
-                                        max_value=int(filtered_df['comments_count'].max()), 
-                                        value=(int(filtered_df['comments_count'].min()), int(filtered_df['comments_count'].max())))
+            if 'YouTube' in platform or platform == []:
+                subscribers_slider = st.slider(
+                    "Subscribers",
+                    min_value=int(filtered_df['subscribers_count'].min()), 
+                    max_value=int(filtered_df['subscribers_count'].max()), 
+                    value=(int(filtered_df['subscribers_count'].min()), int(filtered_df['subscribers_count'].max()))
+                )
+                filtered_df = filtered_df[
+                    (filtered_df['subscribers_count'] >= subscribers_slider[0]) & (filtered_df['subscribers_count'] <= subscribers_slider[1])
+                ]
+            else:
+                subscribers_slider = None  # Set to None for platforms that don't have subscribers count
 
-            
+            likes_slider = st.slider(
+                "Likes",
+                min_value=int(filtered_df['like_count'].min()), 
+                max_value=int(filtered_df['like_count'].max()), 
+                value=(int(filtered_df['like_count'].min()), int(filtered_df['like_count'].max()))
+            )
+
+            comments_slider = st.slider(
+                "Comments",
+                min_value=int(filtered_df['comments_count'].min()), 
+                max_value=int(filtered_df['comments_count'].max()), 
+                value=(int(filtered_df['comments_count'].min()), int(filtered_df['comments_count'].max()))
+            )
+
+        # Apply the filtering after collecting all slider values
         filtered_df = filtered_df[
-                        (filtered_df['views_count'] >= views_slider[0]) & (filtered_df['views_count'] <= views_slider[1]) &
-                        (filtered_df['like_count'] >= likes_slider[0]) & (filtered_df['like_count'] <= likes_slider[1]) &
-                        (filtered_df['comments_count'] >= comments_slider[0]) & (filtered_df['comments_count'] <= comments_slider[1])
-                    ]
+            (filtered_df['like_count'] >= likes_slider[0]) & (filtered_df['like_count'] <= likes_slider[1]) &
+            (filtered_df['comments_count'] >= comments_slider[0]) & (filtered_df['comments_count'] <= comments_slider[1])
+        ]
+
+        # If the platform is Instagram and doesn't have 'views_count' or 'subscribers_count', don't filter on those columns
+        if views_slider is not None:
+            filtered_df = filtered_df[
+                (filtered_df['views_count'] >= views_slider[0]) & (filtered_df['views_count'] <= views_slider[1])
+            ]
+        if subscribers_slider is not None:
+            filtered_df = filtered_df[
+                (filtered_df['subscribers_count'] >= subscribers_slider[0]) & (filtered_df['subscribers_count'] <= subscribers_slider[1])
+            ]
+        # with third_col:
+        #     views_slider = st.slider("Views",
+        #                         min_value=int(filtered_df['views_count'].min()), 
+        #                         max_value=int(filtered_df['views_count'].max()), 
+        #                         value=(int(filtered_df['views_count'].min()), int(filtered_df['views_count'].max())))
+
+        #     if 'YouTube' in platform:
+        #         subscribers_slider = st.slider("Subscribers",
+        #                                 min_value=int(filtered_df['subscribers_count'].min()), 
+        #                                 max_value=int(filtered_df['subscribers_count'].max()), 
+        #                                 value=(int(filtered_df['subscribers_count'].min()), int(filtered_df['subscribers_count'].max())))
+        #         filtered_df = filtered_df[(filtered_df['subscribers_count'] >= subscribers_slider[0]) & (filtered_df['subscribers_count'] <= subscribers_slider[1])]
+            
+        #     likes_slider = st.slider("Likes",
+        #                             min_value=int(filtered_df['like_count'].min()), 
+        #                             max_value=int(filtered_df['like_count'].max()), 
+        #                             value=(int(filtered_df['like_count'].min()), int(filtered_df['like_count'].max())))
+            
+        #     comments_slider = st.slider("Comments",
+        #                                 min_value=int(filtered_df['comments_count'].min()), 
+        #                                 max_value=int(filtered_df['comments_count'].max()), 
+        #                                 value=(int(filtered_df['comments_count'].min()), int(filtered_df['comments_count'].max())))
+
+            
+        # filtered_df = filtered_df[
+        #                 (filtered_df['views_count'] >= views_slider[0]) & (filtered_df['views_count'] <= views_slider[1]) &
+        #                 (filtered_df['like_count'] >= likes_slider[0]) & (filtered_df['like_count'] <= likes_slider[1]) &
+        #                 (filtered_df['comments_count'] >= comments_slider[0]) & (filtered_df['comments_count'] <= comments_slider[1])
+        #             ]
 
         with third_col:
             # Extract primary sentiment into a new column
