@@ -34,7 +34,8 @@ class ALSO_DASHBOARD:
                     
                     'influencer_korpus':DATABASE_DIR+'/influencer_korpus.csv',
 
-                    'Top_50_Posts_Report':DATABASE_DIR+'/Top_50_Posts_Report.csv'
+                    'Top_50_Posts_Report':DATABASE_DIR+'/Top_50_Posts_Report.csv',
+                    'Top_50_Posts_Report_No_immotommy': DATABASE_DIR+'/Top_50_Posts_Report_No_immotommy.csv'
                     }
 
         with st.sidebar:
@@ -54,6 +55,6 @@ class ALSO_DASHBOARD:
         elif app == 'Keyword in Context':
             keyword_in_context_page.app()
         elif     app == 'Topic Modelling':
-            topic_modelling_page.app()
+            topic_modelling_page.app(dataframe_dict=korpus_dict)
             
     run()
