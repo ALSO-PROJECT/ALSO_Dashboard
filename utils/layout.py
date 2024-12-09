@@ -179,6 +179,7 @@ class SocialMediaLayout():
                 elif videos_filter:
                     filtered_df = filtered_df[filtered_df['media_type'] == 'video']
             if 'Instagram' in platform:
+                
                 st.caption("Instagram Filters")
                 posts_col,reels_col = st.columns(2,vertical_alignment='top')
                 posts_filter,reels_filter = posts_col.checkbox('Posts',disabled=False),reels_col.checkbox('Reels',disabled=False)
@@ -440,10 +441,12 @@ class SocialMediaLayout():
         # Replace 'No subscribers count' with 0 for TikTok
         dataframe.loc[(dataframe['platform'] == 'TikTok') & (dataframe['subscribers_count'] == 'No subscribers count'), 'subscribers_count'] = 0
         dataframe['subscribers_count'] = self.safe_convert_to_int(dataframe['subscribers_count'])
-        dataframe["upload_date"] = pd.to_datetime(dataframe["upload_date"], errors='coerce')
         dataframe["comment_date"] = pd.to_datetime(dataframe["comment_date"], errors='coerce')
         # dataframe["extracted_date"] = pd.to_datetime(dataframe["extracted_date"], errors='coerce')
         dataframe['comment_likes'] = dataframe['comment_likes'].fillna(0.0)
+
+        dataframe['upload_date'] = pd.to_datetime(dataframe['upload_date'], errors='coerce')
+        
 
         return dataframe
 

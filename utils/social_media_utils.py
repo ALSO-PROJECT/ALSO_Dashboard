@@ -32,8 +32,8 @@ class SocialMedia():
     def display_reconstructed_page(self,corpus_select,row_video_id,dataframe):
         
         # Hide this until user clicks on the data
-        
-        dataframe['video_id'] = dataframe['video_id'].astype(str)
+
+        # dataframe['video_id'] = dataframe['video_id'].astype(str)
         dataframe = dataframe[dataframe['video_id']==str(row_video_id)]
         dataframe.reset_index(drop=True, inplace=True)
 
@@ -81,8 +81,7 @@ class SocialMedia():
         elif platform.lower() == 'instagram':
             date_extracted = dataframe['extracted_date'][0].split(" ")[0]
         
-        video_id = dataframe['video_id'][0]
-
+        
         # st.markdown(
         #             """
         #             <style>
