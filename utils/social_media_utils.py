@@ -40,19 +40,18 @@ class SocialMedia():
         platform = str(dataframe.loc[0, 'platform'] )
         title = str(dataframe['title'][0])
         description = str(dataframe['video_description'][0])
-        
+        video_id = str(dataframe['video_id'][0])
+
         if platform.lower() == "youtube":
             video_url = str(dataframe['original_url'][0])
             # comments_count = int(dataframe['comments_count'][0])
             comments_count = max(len(dataframe) - 1, 0)
         elif platform.lower() == "tiktok":
             # Manually construct the TikTok URL using the video_id
-            video_id = str(dataframe['video_id'][0])
             video_url = f"https://www.tiktok.com/@username/video/{video_id}"
             # comments_count = int(dataframe['comments_count'][0])
             comments_count = max(len(dataframe) - 1, 0)
         elif platform.lower()=='instagram':
-            video_id = str(dataframe['video_id'][0])
             video_url = f"https://instagram.com/p/{video_id}"
             comments_count = max(len(dataframe) - 1, 0)
 
