@@ -34,7 +34,7 @@ class ALSO_DASHBOARD:
                     
                     'influencer_korpus':DATABASE_DIR+'/influencer_korpus.csv',
 
-                    'Final_Top_50_Liked_Posts': DATABASE_DIR+'Final_top_50_liked_posts.csv',
+                    'Final_Top_50_Liked_Posts': DATABASE_DIR+'/Final_top_50_liked_posts.csv',
                     'Top_50_Posts_Report':DATABASE_DIR+'/Top_50_Posts_Report.csv',
                     'Top_50_Posts_Report_No_immotommy': DATABASE_DIR+'/Top_50_Posts_Report_No_immotommy.csv'
                     }
