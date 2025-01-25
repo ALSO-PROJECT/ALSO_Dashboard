@@ -54,7 +54,7 @@ class ALSO_DASHBOARD:
         elif app == 'Plots&Metrics':
             plots_page.app(dataframe_dict=korpus_dict)
         elif app == 'Keyword in Context':
-            keyword_in_context_page.app()
+            keyword_in_context_page.app(dataframe_dict=korpus_dict)
         elif     app == 'Topic Modelling':
             topic_modelling_page.app(dataframe_dict=korpus_dict)
             
