@@ -682,6 +682,9 @@ class PlotsLayout():
         instagram_data['hashtag'] = instagram_data['hashtag'].apply(self.filter_hashtags)
         df.update(instagram_data)
 
+        st.success(self.original_hashtags)
+        st.dataframe(instagram_data)
+        
         df['hashtag'] = df['hashtag'].str.lower()
         # df['hashtag'] = df['hashtag'].apply(lambda x: [item.lower() if isinstance(item, str) else item for item in x])
 
