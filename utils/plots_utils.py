@@ -664,7 +664,7 @@ class PlotsLayout():
             if tag in [original_tag.lower().strip() for original_tag in self.original_hashtags]:
                 return tag.split('#')[1]
 
-        return str(hashtags) 
+        return "Other irrelevant hashtags"
         
     def safe_literal_eval(self,val):
         if isinstance(val, str):
@@ -681,9 +681,6 @@ class PlotsLayout():
         instagram_data['hashtag'] = instagram_data['hashtag'].apply(self.safe_literal_eval)
         instagram_data['hashtag'] = instagram_data['hashtag'].apply(self.filter_hashtags)
         df.update(instagram_data)
-
-        st.success(self.original_hashtags)
-        st.dataframe(instagram_data)
         
         df['hashtag'] = df['hashtag'].str.lower()
         # df['hashtag'] = df['hashtag'].apply(lambda x: [item.lower() if isinstance(item, str) else item for item in x])
