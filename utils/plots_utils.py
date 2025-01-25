@@ -6,6 +6,7 @@ from millify import millify
 import pandas as pd
 import numpy as np
 import json
+import ast
 
 from sklearn.feature_extraction.text import CountVectorizer
 import matplotlib.pyplot as plt
@@ -53,6 +54,10 @@ class PlotsLayout():
             'video_id_input': ''
         }
         
+        hashtags_file_path = 'utils/hashtags.txt'
+        with open(hashtags_file_path, 'r') as file:
+            raw_list= file.read().strip().split(',')
+            self.original_hashtags = ['#'+item.strip().replace('\n', ' ') for item in raw_list]
 
         self.dataframe_dict = dataframe_dict
         
@@ -641,8 +646,45 @@ class PlotsLayout():
         )
         st.plotly_chart(fig, use_container_width=True)
 
+    # def filter_hashtags(self,hashtags):
+    #     if not isinstance(hashtags, list):
+    #         return ""
+    #     for tag in hashtags:
+    #         if tag in self.original_hashtags:
+    #             return tag.split('#')[1]
+    #     return str(hashtags)
+    
+    def filter_hashtags(self, hashtags):
+        if not isinstance(hashtags, list):
+            return "" 
+
+        hashtags = [tag.lower().strip() for tag in hashtags]
+        
+        for tag in hashtags:
+            if tag in [original_tag.lower().strip() for original_tag in self.original_hashtags]:
+                return tag.split('#')[1]
+
+        return str(hashtags) 
+        
+    def safe_literal_eval(self,val):
+        if isinstance(val, str):
+            try:
+                return ast.literal_eval(val)
+            except (ValueError, SyntaxError):
+                return [] 
+        return []
+
 
     def display_metrics(self,df,col_name):
+        
+        instagram_data = df[df['platform'] == 'Instagram']
+        instagram_data['hashtag'] = instagram_data['hashtag'].apply(self.safe_literal_eval)
+        instagram_data['hashtag'] = instagram_data['hashtag'].apply(self.filter_hashtags)
+        df.update(instagram_data)
+
+        df['hashtag'] = df['hashtag'].str.lower()
+        # df['hashtag'] = df['hashtag'].apply(lambda x: [item.lower() if isinstance(item, str) else item for item in x])
+
         # Group by hashtag_name
         grouped = df.groupby(col_name)
 
